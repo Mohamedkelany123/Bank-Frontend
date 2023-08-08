@@ -7,10 +7,10 @@
       <v-spacer></v-spacer>
       <template v-slot:append>
         <v-btn rounded="0" size="x-large" class="app-bar" @click="createLoanFunds">Create Loan Fund</v-btn>
+        <v-btn rounded="0" size="x-large" class="app-bar" @click="createLoan">Create Loan</v-btn>
         <v-btn rounded="0" size="x-large" class="app-bar" @click="viewLoanFunds">View Loan Funds</v-btn>
         <v-btn rounded="0" size="x-large" class="app-bar" @click="viewLoans">View Loans</v-btn>
-        <v-btn rounded="0" size="x-large" class="app-bar" @click="editLoanFunds">Edit Loan Funds</v-btn>
-        <v-btn rounded="0" size="x-large" class="app-bar" @click="editLoans">Edit Loans</v-btn>
+        <!-- <v-btn rounded="0" size="x-large" class="app-bar" @click="editLoans">Edit Loans</v-btn> -->
         <v-btn rounded="xl" size="x-large" class="logout-button" @click="logout">Logout</v-btn>
       </template>
     </v-app-bar>
@@ -113,13 +113,19 @@
                   </div>
                 </div>
               </v-card-text>
+              <v-card-actions class="card-actions">
+                <div class="actions-center">
+                  <v-btn color="success" @click="acceptLoan(item.id)">Accept</v-btn>
+                  <v-btn color="error" @click="rejectLoan(item.id)">Reject</v-btn>
+                </div>
+              </v-card-actions>
             </v-card>
           </v-col>
-        </v-row>
-      </v-container>
+          </v-row>
+        </v-container>
 
       <!-- CREATE LOAN FUND -->
-      <v-container class="custom-container">
+      <v-container class="custom-container" v-if="showCreateForm">
         <v-row justify="center">
           <v-col cols="12" sm="8" md="6" lg="4">
             <v-card class="my-4 custom-card" :style="{ backgroundColor: color }">
@@ -140,6 +146,29 @@
         </v-row>
       </v-container>
 
+    <!-- CREATE LOAN -->
+    <v-container class="custom-container" v-if="showCreateLoanForm">
+        <v-row justify="center">
+          <v-col cols="12" sm="8" md="6" lg="4">
+            <v-card class="my-4 custom-card" :style="{ backgroundColor: color }">
+              <v-card-title class="custom-card-title">Create Loan</v-card-title>
+              <v-divider class="mt-2"></v-divider>
+              <v-card-text>
+                <v-form @submit.prevent="submitLoanForm">
+                  <v-text-field v-model="newLoan.customerName" label="Customer Name"></v-text-field>
+                  <v-text-field v-model.number="newLoan.loan_fund_id" label="Loan Fund ID"></v-text-field>
+                  <v-text-field v-model.number="newLoan.amount" label="Amount"></v-text-field>
+                  <div v-if="createLoanError" class="error-message">{{ createLoanError }}</div>
+                  <v-btn type="submit" color="primary">Create</v-btn>
+                </v-form>
+              </v-card-text>
+            </v-card>
+          </v-col>
+        </v-row>
+      </v-container>
+
+
+
 
     </div>
   </v-app>
@@ -152,8 +181,16 @@ export default {
   name: 'BankPersonnelPage',
 
   data: () => ({
-    
+    newLoan: {
+      customerName: "",
+      loan_fund_id: null,
+      status: "Requested",
+      amount: 0,
+    },
+    showCreateLoanForm: false,
     loanFunds: [],
+    createLoanError: null,
+    showCreateForm: false,
     loan: [], 
     color: '',
     newLoanFund: {
@@ -166,11 +203,57 @@ export default {
   }),
 
   methods: {
+    async submitLoanForm() {
+      try {
+        const response = await axios.post("http://127.0.0.1:8000/loan/", this.newLoan);
+        if (response.status === 201) {
+          this.newLoan = {
+            customerName: "",
+            loan_fund_id: null,
+            status: "Requested",
+            amount: 0,
+          };
+          this.viewLoans();
+        }
+      } catch (error) {
+        if (error.response && error.response.status === 400) {
+            this.createLoanError = error.response.data.error; 
+        } else {
+          console.error("Error creating loan:", error);
+        }
+      }
+    },
+
+    async acceptLoan(loanId) {
+    try {
+      const response = await axios.put(`http://127.0.0.1:8000/loan/approve/${loanId}`);
+      if (response.status === 200) {
+        // Successful accept, update the UI or perform other actions
+        // You might want to refresh the list of loans here
+        this.viewLoans();
+      }
+    } catch (error) {
+      console.error('Error accepting loan:', error);
+    }
+  },
+
+  async rejectLoan(loanId) {
+    try {
+      const response = await axios.put(`http://127.0.0.1:8000/loan/reject/${loanId}`);
+      if (response.status === 200) {
+        this.viewLoans();
+      }
+    } catch (error) {
+      console.error('Error rejecting loan:', error);
+        }
+      },
     async viewLoanFunds() {
       try {
         const response = await axios.get('http://127.0.0.1:8000/loanFund/');
         this.loanFunds = response.data;
         this.loan = [];
+        this.showCreateForm = false;
+        this.showCreateLoanForm = false;
       } catch (error) {
         console.error('Error fetching loan funds:', error);
       }
@@ -178,19 +261,19 @@ export default {
       
     async viewLoans() {
       try {
-      const response = await axios.get('http://127.0.0.1:8000/loan/');
-      this.loan = response.data;
-      this.loanFunds = [];
-    } catch (error) {
-      console.error('Error fetching loan funds:', error);
-    }
+        const response = await axios.get('http://127.0.0.1:8000/loan/');
+        this.loan = response.data;
+        this.loanFunds = [];
+        this.showCreateForm = false;
+        this.showCreateLoanForm = false;
+      } catch (error) {
+        console.error('Error fetching loans:', error);
+      }
     },
     async submitLoanFundForm() {
       try {
         const response = await axios.post("http://127.0.0.1:8000/loanFund/", this.newLoanFund);
         if (response.status === 201) {
-          // Successful creation, update the UI or perform other actions
-          // Clear the form fields
           this.newLoanFund = {
             name: "",
             max_loan_amount: 0,
@@ -198,37 +281,60 @@ export default {
             interest_rate: 0, 
             loan_duration: 0,
           };
-          // Optionally, you can fetch and update the list of loan funds after successful creation
           this.viewLoanFunds();
         }
       } catch (error) {
         console.error("Error creating loan fund:", error);
-        // Display an error message to the user
-        // You can use a library like v-dialog to show a modal with the error message
-        // Or use a snackbar to show a temporary message at the bottom of the screen
       }
     },
-
+    createLoanFunds(){
+      this.loan = [];
+      this.loanFunds = [];
+      this.showCreateLoanForm = false;
+      this.showCreateForm = true;
+    },
+    createLoan(){
+      this.loan = [];
+      this.loanFunds = [];
+      this.showCreateForm = false;
+      this.showCreateLoanForm = true;
+    },
     editLoanFunds() {
-        // Handle edit loan funds action
     },
     editLoans() {
-        // Handle edit loans action
     },
     logout() {
-        // Handle logout action
-        // Redirect to the login page
+
         this.$router.push('/login');
     },
   },
 };
 </script>
   
-  <style>
+<style>
+.error-message {
+  color: red;
+  font-size: 14px;
+  margin-top: 8px;
+  text-align: center; 
+  font-weight: bold; 
+}
+.card-actions {
+  display: flex;
+  justify-content: center; 
+  align-items: center; 
+  padding: 16px;
+}
+
+.actions-center {
+  display: flex;
+  justify-content: center; 
+  align-items: center;
+}
   .page-wrapper {
-    background-color: #f5f5f5; /* Set the background color for the whole page */
-    min-height: 100vh; /* Set the minimum height to cover the viewport */
-    padding-top: 70px; /* To account for the app bar height */
+    background-color: #f5f5f5; 
+    min-height: 100vh; 
+    padding-top: 70px; 
     box-sizing: border-box;
   }
   .app-bar-title {
