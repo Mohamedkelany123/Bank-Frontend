@@ -23,6 +23,11 @@
           <v-col v-for="fund in loanFunds" :key="fund.id" cols="12" sm="6" md="4" lg="3">
             <v-card class="my-4 custom-card" :style="{ backgroundColor: color }">
               <v-card-title class="custom-card-title">{{ fund.name }}</v-card-title>
+              <v-card-actions class="delete-button">
+                <v-btn icon color="error" @click="deleteLoanFund(fund.id)">
+                  <v-icon>mdi-close</v-icon>
+                </v-btn>
+              </v-card-actions>
               <v-divider class="mt-2"></v-divider>
               <v-card-text>
                 <div class="info-item">
@@ -63,12 +68,17 @@
       
       </v-container>
 
-      <!-- VIEW LOANS -->
+      <!-- VIEW LOANS AND ACCEPT/REJECT LOAN -->
       <v-container class="custom-container">
         <v-row justify="center">
           <v-col v-for="item in loan" :key="item.id" cols="12" sm="6" md="4" lg="3">
             <v-card class="my-4 custom-card" :style="{ backgroundColor: color }">
               <v-card-title class="custom-card-title">{{ item.customerName }}</v-card-title>
+              <v-card-actions class="delete-button">
+                <v-btn icon color="error" @click="deleteLoan(item.id)">
+                  <v-icon>mdi-close</v-icon>
+                </v-btn>
+              </v-card-actions>
               <v-divider class="mt-2"></v-divider>
               <v-card-text>
                 <div class="info-item">
@@ -203,6 +213,28 @@ export default {
   }),
 
   methods: {
+    async deleteLoan(loan_id){
+      try {
+        const response = await axios.delete(`http://127.0.0.1:8000/loan/delete/${loan_id}`);
+        if (response.status === 204) {
+          // Successful deletion, update the UI or perform other actions
+          this.viewLoans();
+        }
+      } catch (error) {
+        console.error('Error deleting loan fund:', error);
+        }
+    },
+    async deleteLoanFund(fundId) {
+      try {
+        const response = await axios.delete(`http://127.0.0.1:8000/loanFund/${fundId}`);
+        if (response.status === 204) {
+          // Successful deletion, update the UI or perform other actions
+          this.viewLoanFunds();
+        }
+      } catch (error) {
+        console.error('Error deleting loan fund:', error);
+        }
+    },
     async submitLoanForm() {
       try {
         const response = await axios.post("http://127.0.0.1:8000/loan/", this.newLoan);
@@ -304,7 +336,6 @@ export default {
     editLoans() {
     },
     logout() {
-
         this.$router.push('/login');
     },
   },
@@ -312,6 +343,13 @@ export default {
 </script>
   
 <style>
+.delete-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1;
+}
+
 .error-message {
   color: red;
   font-size: 14px;
