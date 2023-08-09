@@ -2,6 +2,8 @@ import {createRouter, createWebHistory } from 'vue-router';
 import LoginPage from '@/views/LoginPage';
 import BankPersonnelPage from '../views/BankPersonnelPage.vue';
 import LoanProviderPage from '../views/LoanProvider.vue';
+import LoanCustomerPage from '../views/LoanCustomer.vue';
+
 
 const routes = [
   {
@@ -19,7 +21,11 @@ const routes = [
     name: 'LoanProviderPage',
     component: LoanProviderPage,
   },
-  // Other routes if needed
+  {
+    path: '/loanCustomer/:username',
+    name: 'loanCustomer',
+    component: LoanCustomerPage,
+  },
 ];
 
 const router = createRouter({

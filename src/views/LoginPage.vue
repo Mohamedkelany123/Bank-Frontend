@@ -84,11 +84,15 @@ export default {
             // Successful login, route to another page
             if (this.username === 'bankPersonnel')
               this.$router.push('/bankPersonnel');
-            if (this.username === 'loanCustomers')
-              this.$router.push('/loanCustomers');
             if (this.username === 'loanProvider')
               this.$router.push('/loanProvider');
-          } else {
+            else {
+                this.$router.push({
+                  name: 'loanCustomer', 
+                  params: { username: this.username }, 
+                });
+              }
+            } else {
             // Handle other status codes if needed
             console.log('Login failed');
             this.loginFailedDialog = true;
