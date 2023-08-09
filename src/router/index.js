@@ -3,6 +3,7 @@ import LoginPage from '@/views/LoginPage';
 import BankPersonnelPage from '../views/BankPersonnelPage.vue';
 import LoanProviderPage from '../views/LoanProvider.vue';
 import LoanCustomerPage from '../views/LoanCustomer.vue';
+import registerPage from '../views/registerPage.vue';
 
 
 const routes = [
@@ -25,6 +26,11 @@ const routes = [
     path: '/loanCustomer/:username',
     name: 'loanCustomer',
     component: LoanCustomerPage,
+  },
+  {
+    path: '/register',
+    name: 'register',
+    component: registerPage,
   },
 ];
 

@@ -32,6 +32,7 @@
                 @click:append="passwordShow = !passwordShow"
                 required
               />
+              <div v-if="loginError" class="error-message">{{ loginError }}</div>
             </v-card-text>
             <v-card-actions class="justify-center">
               <v-btn
@@ -43,9 +44,16 @@
                 rounded
                 class="submit-button"
               >
-                <span>Login</span>
+              <span>Login</span>
               </v-btn>
             </v-card-actions>
+            <v-btn
+              class="register-link"
+              text
+              @click="$router.push('/register')" 
+            >
+              Register
+            </v-btn>
           </v-form>
         </v-card>
       </v-col>
@@ -59,6 +67,7 @@ import axios from 'axios';
 export default {
   name: 'LoginPage',
   data: () => ({
+    loginError: null,
     loading: false,
     snackbar: false,
     passwordShow: false,
@@ -72,6 +81,7 @@ export default {
   }),
   methods: {
     async submitHandler() {
+      this.loginError = null;
       if (this.$refs.form.validate()) {
         this.loading = true;
         try {
@@ -86,26 +96,28 @@ export default {
               this.$router.push('/bankPersonnel');
             if (this.username === 'loanProvider')
               this.$router.push('/loanProvider');
-            else {
+            else if (this.username != 'bankPersonnel' && this.username != 'loanProvider'){
                 this.$router.push({
                   name: 'loanCustomer', 
                   params: { username: this.username }, 
                 });
               }
-            } else {
+            } else if (response.status === 401) {
+              this.loginError = 'Invalid credentials'; 
+            }else {
             // Handle other status codes if needed
             console.log('Login failed');
             this.loginFailedDialog = true;
           }
         } catch (error) {
-          if (error.response && error.response.status === 401) {
-            console.log('Invalid credentials');
-            this.loginFailedDialog = true;
-            // Show a message to the user or redirect to an error page
-          } else {
-            console.error('An error occurred:', error.message);
-          }
-        } finally {
+            if (error.response && error.response.status === 401) {
+              console.log('Invalid credentials');
+              console.log('Error Response:', error.response.data);
+              this.loginError = 'Invalid credentials';
+            } else {
+              console.error('An error occurred:', error.message);
+            }
+          } finally {
           this.loading = false;
           this.snackbar = true; // Show snackbar regardless of response
         }
@@ -128,6 +140,12 @@ export default {
   z-index: -1; /* Place the background behind the content */
 }
 
+.error-message {
+  color: red;
+  font-size: 14px;
+  margin-top: 10px;
+}
+
 /* Card styling */
 .custom-card {
   background-color: rgba(255, 255, 255, 0.9); /* Adjust the transparency as needed */
@@ -140,6 +158,13 @@ export default {
 .submit-button {
   color: white;
   background-color: rgb(72, 102, 204);
+}
+
+.register-link {
+  color: inherit; 
+  text-decoration: underline; 
+  cursor: pointer;
+  box-shadow: none;
 }
 
 /* Icon styling */
