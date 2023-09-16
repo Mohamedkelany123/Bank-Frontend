@@ -5,7 +5,7 @@
       <v-toolbar-title class="app-bar-title">Loan Provider</v-toolbar-title>
       <v-spacer></v-spacer>
       <template v-slot:append>
-        <v-btn rounded="xl" size="x-large" class="logout-button" @click="logout">Logout</v-btn>
+        <v-btn id="logOut" rounded="xl" size="x-large" class="logout-button" @click="logout">Logout</v-btn>
       </template>
     </v-app-bar>
 
@@ -15,15 +15,15 @@
         <v-row justify="center">
           <!-- Loop through each fund and create a card -->
           <v-col v-for="fund in loanFunds" :key="fund.id" cols="12" sm="6" md="4" lg="3">
-            <v-card class="my-4 custom-card" :style="{ backgroundColor: color }">
-              <v-card-title class="custom-card-title">{{ fund.name }}</v-card-title>
+            <v-card class="my-4 custom-card" :style="{ backgroundColor: color }" :data-fund-name="fund.name">
+              <v-card-title id="fundTitle" class="custom-card-title">{{ fund.name }}</v-card-title>
               <v-divider class="mt-2"></v-divider>
               <v-card-text>
                 <!-- Display fund information -->
                 <div class="info-item">
                   <div class="info-label-value">
                     <v-icon class="card-icon">mdi-key</v-icon>
-                    <span class="info-label-bold">ID:</span> {{ fund.id }}
+                    <span id="fundID" class="info-label-bold">{{ fund.id }}</span>
                   </div>
                 </div>
                 <div class="info-item">
@@ -55,11 +55,11 @@
                   <v-row align="center">
                     <!-- Input field for adding funds -->
                     <v-col cols="7">
-                      <v-text-field v-model.number="cardInputValues.find(card => card.id === fund.id).value" style="height: 30px;"></v-text-field>
+                      <v-text-field :id="'fundInput' + fund.id" v-model.number="cardInputValues.find(card => card.id === fund.id).value" style="height: 30px;"></v-text-field>
                     </v-col>
                     <v-col cols="5">
                       <!-- Button to add funds -->
-                      <v-btn color="primary" style="height: 0px;" size="large" @click="addFund(fund, cardInputValues.find(card => card.id === fund.id).value)">Add Fund</v-btn>
+                      <v-btn :id="'addFund' + fund.id" color="primary" style="height: 1px;" size="large" @click="addFund(fund, cardInputValues.find(card => card.id === fund.id).value)">Add Fund</v-btn>
                     </v-col>
                   </v-row>
                 </v-card-actions>
@@ -81,8 +81,8 @@ export default {
   name: 'LoanProviderPage',
 
   data: () => ({
-    cardInputValues: [], // Stores input values and error messages for each fund
-    loanFunds: [], // Stores the list of loan funds
+    cardInputValues: [], 
+    loanFunds: [], 
     color: '',
     fundToAdd: 0,
     errorMsg: null,
@@ -94,40 +94,58 @@ export default {
 
   methods: {
     async addFund(fund, amount) {
-      if (amount <= 0) {
-        // Display an error message if amount is invalid
-        const card = this.cardInputValues.find(card => card.id === fund.id);
-        card.errorMsg = "Please enter a valid positive amount.";
-        return;
-      }
-      try {
-        // Update fund amount using API
-        const response = await axios.put(`http://127.0.0.1:8000/loanFund/${fund.id}`, {
-          amount: amount,
-        });
+  if (amount <= 0) {
+    // Display an error message if amount is invalid
+    const card = this.cardInputValues.find(card => card.id === fund.id);
+    card.errorMsg = "Please enter a valid positive amount.";
+    return;
+  }
+  try {
+    const token = this.$store.state.token;
+    const config = {
+      headers: {
+        Authorization: `Token ${token}`, // Send the token as a Bearer token
+      },
+    };
 
-        if (response.status === 200) {
-          // Refresh fund list and clear error message
-          this.fundToAdd = 0;
-          this.viewLoanFunds();
-          this.errorMsg = "";
-        }
-      } catch (error) {
-        console.error('Error updating fund amount:', error);
-      }
-    },
-    async viewLoanFunds() {
-      try {
-        // Fetch loan funds from API and populate cardInputValues
-        const response = await axios.get('http://127.0.0.1:8000/loanFund/');
-        this.cardInputValues = response.data.map(fund => ({ id: fund.id, value: '', errorMsg: '' }));
-        this.loanFunds = response.data;
-      } catch (error) {
-        console.error('Error fetching loan funds:', error);
-      }
-    },
+    // Update fund amount using API
+    const response = await axios.put(`http://127.0.0.1:8000/loanFund/${fund.id}`, {
+      amount: amount,
+    }, config);
+
+    if (response.status === 200) {
+      // Refresh fund list and clear error message
+      this.fundToAdd = 0;
+      this.viewLoanFunds();
+      this.errorMsg = "";
+    }
+  } catch (error) {
+    console.error('Error updating fund amount:', error);
+  }
+},
+
+async viewLoanFunds() {
+  try {
+    const token = this.$store.state.token;
+    const config = {
+      headers: {
+        Authorization: `Token ${token}`, // Send the token as a Bearer token
+      },
+    };
+
+    // Fetch loan funds from API and populate cardInputValues
+    const response = await axios.get('http://127.0.0.1:8000/loanFund/', config);
+    this.cardInputValues = response.data.map(fund => ({ id: fund.id, value: '', errorMsg: '' }));
+    this.loanFunds = response.data;
+  } catch (error) {
+    console.error('Error fetching loan funds:', error);
+  }
+},
+
 
     logout() {
+      // Clear the token in the Vuex store
+      this.$store.commit('clearToken');
       // Redirect to login page
       this.$router.push('/login');
     },

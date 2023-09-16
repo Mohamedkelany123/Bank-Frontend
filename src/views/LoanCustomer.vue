@@ -6,10 +6,10 @@
         <v-spacer></v-spacer>
         <template v-slot:append>
           
-          <v-btn rounded="0" size="x-large" class="app-bar" @click="viewLoanFunds">View Loan Funds</v-btn>
-          <v-btn rounded="0" size="x-large" class="app-bar" @click="createLoan">Create Loan</v-btn>
-          <v-btn rounded="0" size="x-large" class="app-bar" @click="viewLoans">View Loans</v-btn>
-          <v-btn rounded="xl" size="x-large" class="logout-button" @click="logout">Logout</v-btn>
+          <v-btn id="viewLoanFunds" rounded="0" size="x-large" class="app-bar" @click="viewLoanFunds">View Loan Funds</v-btn>
+          <v-btn id="createLoan" rounded="0" size="x-large" class="app-bar" @click="createLoan">Create Loan</v-btn>
+          <v-btn id="viewLoansCustomer" rounded="0" size="x-large" class="app-bar" @click="viewLoans">View Loans</v-btn>
+          <v-btn id="logOut" rounded="xl" size="x-large" class="logout-button" @click="logout">Logout</v-btn>
           
         </template>
       </v-app-bar>
@@ -21,7 +21,7 @@
         <v-row  justify="center">
           <v-col v-for="fund in loanFunds" :key="fund.id" cols="12" sm="6" md="4" lg="3">
             <v-card class="my-4 custom-card" :style="{ backgroundColor: color }">
-              <v-card-title class="custom-card-title">{{ fund.name }}</v-card-title>
+              <v-card-title id="fundTitleCustomer" class="custom-card-title">{{ fund.name }}</v-card-title>
               <v-card-actions class="delete-button">
               </v-card-actions>
               <v-divider class="mt-2"></v-divider>
@@ -29,7 +29,7 @@
                 <div class="info-item">
                   <div class="info-label-value">
                     <v-icon class="card-icon">mdi-key</v-icon>
-                    <span class="info-label-bold"></span> {{ fund.id }}
+                    <span id="fundIDCustomer" class="info-label-bold">{{ fund.id }}</span> 
                   </div>
                 </div>
                 <div class="info-item">
@@ -73,11 +73,11 @@
               <v-divider class="mt-2"></v-divider>
               <v-card-text>
                 <v-form @submit.prevent="submitLoanForm">
-                  <v-text-field v-model="newLoan.customerName" label="Customer Name" readonly></v-text-field>
-                  <v-text-field v-model.number="newLoan.loan_fund_id" label="Loan Fund ID"></v-text-field>
-                  <v-text-field v-model.number="newLoan.amount" label="Amount"></v-text-field>
+                  <v-text-field id="Customer Name" v-model="newLoan.customerName" label="Customer Name" readonly></v-text-field>
+                  <v-text-field id="Loan Fund ID" v-model.number="newLoan.loan_fund_id" label="Loan Fund ID"></v-text-field>
+                  <v-text-field id="Amount" v-model.number="newLoan.amount" label="Amount"></v-text-field>
                   <div v-if="createLoanError" class="error-message">{{ createLoanError }}</div>
-                  <v-btn type="submit" color="primary">Create</v-btn>
+                  <v-btn id="createLoanButton" type="submit" color="primary">Create</v-btn>
                 </v-form>
               </v-card-text>
             </v-card>
@@ -85,7 +85,7 @@
         </v-row>
       </v-container>
 
-      <!-- VIEW LOANS AND ACCEPT/REJECT LOAN -->
+      <!-- VIEW LOAN -->
       <v-container class="custom-container">
         <v-row justify="center">
           <v-col v-for="item in loan" :key="item.id" cols="12" sm="6" md="4" lg="3">
@@ -165,7 +165,7 @@ export default {
       customerName: '',
       loan_fund_id: null,
       status: "Requested",
-      amount: 0,
+      amount: '',
     },
     showCreateLoanForm: false,
     createLoanError: null,
@@ -173,50 +173,79 @@ export default {
 
   methods: {
     logout() {
+        // Clear the token in the Vuex store
+        this.$store.commit('clearToken');
         this.$router.push('/login');
     },
-    async viewLoans() {
-        try {
-        const username = this.$route.params.username;
-        this.showCreateLoanForm = false;
-        this.loanFunds = [];
-        const response = await axios.get(`http://127.0.0.1:8000/loan/${username}`);
-        // Assuming the response data is an array of loans
-        this.loan = response.data;
-        } catch (error) {
-        console.error('Error fetching loans:', error);
-        }
-    },
-    async submitLoanForm() {
-      try {
-        const response = await axios.post("http://127.0.0.1:8000/loan/", this.newLoan);
-        if (response.status === 201) {
-          this.newLoan = {
-            customerName: this.$route.params.username,
-            loan_fund_id: null,
-            status: "Requested",
-            amount: 0,
-          };
-          this.viewLoans();
-        }
-      } catch (error) {
-        if (error.response && error.response.status === 400) {
-            this.createLoanError = error.response.data.error; 
-        } else {
-          console.error("Error creating loan:", error);
-        }
-      }
-    },
-    async viewLoanFunds() {
-      try {
-        this.showCreateLoanForm = false;
-        this.loan = [];
-        const response = await axios.get('http://127.0.0.1:8000/loanFund/');
-        this.loanFunds = response.data;
-      } catch (error) {
-        console.error('Error fetching loan funds:', error);
-      }
-    },
+async viewLoans() {
+  try {
+    const username = this.$route.params.username;
+    this.showCreateLoanForm = false;
+    this.loanFunds = [];
+
+    const token = this.$store.state.token;
+    const config = {
+      headers: {
+        Authorization: `Token ${token}`,
+      },
+    };
+
+    const response = await axios.get(`http://127.0.0.1:8000/loan/${username}`, config);
+
+    this.loan = response.data;
+  } catch (error) {
+    console.error('Error fetching loans:', error);
+  }
+},
+
+async submitLoanForm() {
+  try {
+    const token = this.$store.state.token;
+    const config = {
+      headers: {
+        Authorization: `Token ${token}`, // Send the token as a Bearer token
+      },
+    };
+
+    const response = await axios.post("http://127.0.0.1:8000/loan/", this.newLoan, config);
+
+    if (response.status === 201) {
+      this.newLoan = {
+        customerName: this.$route.params.username,
+        loan_fund_id: null,
+        status: "Requested",
+        amount: 0,
+      };
+      this.viewLoans();
+    }
+  } catch (error) {
+    if (error.response && error.response.status === 400) {
+      this.createLoanError = error.response.data.error;
+    } else {
+      console.error("Error creating loan:", error);
+    }
+  }
+},
+
+
+async viewLoanFunds() {
+  try {
+    const token = this.$store.state.token;
+    const config = {
+      headers: {
+        Authorization: `Token ${token}`, 
+      },
+    };
+    
+    this.showCreateLoanForm = false;
+    this.loan = [];
+    const response = await axios.get('http://127.0.0.1:8000/loanFund/', config);
+    this.loanFunds = response.data;
+  } catch (error) {
+    console.error('Error fetching loan funds:', error);
+  }
+},
+
     createLoan(){
       this.loanFunds = [];
       this.loan = [];

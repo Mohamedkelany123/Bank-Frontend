@@ -16,6 +16,7 @@
                 v-model="username"
                 :rules="usernameRules"
                 type="text"
+                id="Username"
                 label="Username"
                 placeholder="Username"
                 prepend-inner-icon="mdi-account"
@@ -26,6 +27,7 @@
                 :rules="passwordRules"
                 :type="passwordShow ? 'text' : 'password'"
                 label="Password"
+                id="Password"
                 placeholder="Password"
                 prepend-inner-icon="mdi-key"
                 :append-icon="passwordShow ? 'mdi-eye' : 'mdi-eye-off'"
@@ -38,6 +40,7 @@
               <v-btn
                 :loading="loading"
                 type="submit"
+                id="submit"
                 color="white"
                 variant="contained"
                 block
@@ -91,35 +94,39 @@ export default {
           });
           
           if (response.status === 200) {
-            // Successful login, route to another page
-            if (this.username === 'bankPersonnel')
+            // Successful login, set the token in Vuex store
+            const token = response.data.token;
+            this.$store.commit('setToken', token);
+
+            // Route to the appropriate page based on the user's role
+            if (this.username === 'bankPersonnel') {
               this.$router.push('/bankPersonnel');
-            if (this.username === 'loanProvider')
+            } else if (this.username === 'loanProvider') {
               this.$router.push('/loanProvider');
-            else if (this.username != 'bankPersonnel' && this.username != 'loanProvider'){
-                this.$router.push({
-                  name: 'loanCustomer', 
-                  params: { username: this.username }, 
-                });
-              }
-            } else if (response.status === 401) {
-              this.loginError = 'Invalid credentials'; 
-            }else {
+            } else {
+              this.$router.push({
+                name: 'loanCustomer', 
+                params: { username: this.username }, 
+              });
+            }
+          } else if (response.status === 401) {
+            this.loginError = 'Invalid credentials'; 
+          } else {
             // Handle other status codes if needed
             console.log('Login failed');
             this.loginFailedDialog = true;
           }
         } catch (error) {
-            if (error.response && error.response.status === 401) {
-              console.log('Invalid credentials');
-              console.log('Error Response:', error.response.data);
-              this.loginError = 'Invalid credentials';
-            } else {
-              console.error('An error occurred:', error.message);
-            }
-          } finally {
+          if (error.response && error.response.status === 401) {
+            console.log('Invalid credentials');
+            console.log('Error Response:', error.response.data);
+            this.loginError = 'Invalid credentials';
+          } else {
+            console.error('An error occurred:', error.message);
+          }
+        } finally {
           this.loading = false;
-          this.snackbar = true; // Show snackbar regardless of response
+          this.snackbar = true; 
         }
       }
     },
@@ -128,16 +135,16 @@ export default {
 </script>
 
 <style scoped>
-/* Background image and size */
+
 .background {
   background-image: url('~@/assets/Order-Banner.jpg');
-  height: 45vh; /* Adjust as needed */
+  height: 45vh; 
   width: 100%;
   display: block;
   position: absolute;
   top: 0;
   background-size: cover;
-  z-index: -1; /* Place the background behind the content */
+  z-index: -1; 
 }
 
 .error-message {
@@ -146,15 +153,15 @@ export default {
   margin-top: 10px;
 }
 
-/* Card styling */
+
 .custom-card {
-  background-color: rgba(255, 255, 255, 0.9); /* Adjust the transparency as needed */
+  background-color: rgba(255, 255, 255, 0.9); 
   border-radius: 10px;
   box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.1);
   padding: 24px;
 }
 
-/* Button styling */
+
 .submit-button {
   color: white;
   background-color: rgb(72, 102, 204);
@@ -167,13 +174,13 @@ export default {
   box-shadow: none;
 }
 
-/* Icon styling */
+
 .icon {
   color: white;
 }
 
 @media (max-width: 600px) {
-  /* Adjust styling for smaller screens */
+ 
   .background {
     height: 35vh;
   }

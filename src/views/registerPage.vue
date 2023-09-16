@@ -17,6 +17,7 @@
                 :rules="usernameRules"
                 type="text"
                 label="Username"
+                id="Username"
                 placeholder="Username"
                 prepend-inner-icon="mdi-account"
                 required
@@ -26,6 +27,7 @@
                 :rules="passwordRules"
                 :type="passwordShow ? 'text' : 'password'"
                 label="Password"
+                id="Password"
                 placeholder="Password"
                 prepend-inner-icon="mdi-key"
                 :append-icon="passwordShow ? 'mdi-eye' : 'mdi-eye-off'"
@@ -37,6 +39,7 @@
                 :rules="emailRules"
                 type="email"
                 label="Email"
+                id="Email"
                 placeholder="Email"
                 prepend-inner-icon="mdi-email"
                 required
@@ -46,6 +49,7 @@
               <v-btn
                 :loading="loading"
                 type="submit"
+                id= "submit"
                 color="white"
                 variant="contained"
                 block
